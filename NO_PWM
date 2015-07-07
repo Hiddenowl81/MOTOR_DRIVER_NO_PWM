@@ -1,1 +1,238 @@
+/*
+ * Motor_Test_no_PWM.c
+ *
+ * Created: 7/7/2015 8:58:00 AM
+ *  Author: owner
+ */ 
+
+/*
+	IN1	|	IN2	|	Operation
+	-------------------------
+	L	|	L	|	CW
+	-------------------------
+	L	|	H	|	CCW
+	-------------------------
+	H	|	L	|	Brake
+*/
+
+
+//Equation for waveform frequency
+
+/*
+	[F(OCnx)] = [F(clk_I/O)] / [2*N*(1+OCRnx)]        We Chose N = 256
+*/
+#define F_CPU 14745600UL
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <util/delay.h>
+
+void motorR_BRAKE();
+void motorL_BRAKE();
+void motor_FWD();
+void motor_BWD();
+void motor_R_TURN();
+void motor_L_TURN();
+
+void motorL_CW();
+void motorR_CW();
+
+void motorL_CCW();
+void motorR_CCW();
+
+void _pwm_init();
+
+
+static int uart_putchar(char c, FILE *stream);
+static int uart_getchar(FILE *stream);
+FILE mystdout = FDEV_SETUP_STREAM(uart_putchar, NULL, _FDEV_SETUP_WRITE);
+FILE mystdin = FDEV_SETUP_STREAM(NULL, uart_getchar, _FDEV_SETUP_READ);
+static int uart_putchar(char c, FILE *stream)
+{
+	loop_until_bit_is_set(UCSR0A, UDRE0);
+	UDR0 = c;
+	return 0;
+}
+static int uart_getchar(FILE *stream)
+{
+	loop_until_bit_is_set(UCSR0A, RXC0); /* Wait until data exists. */
+	return UDR0;
+}
+void init_uart(void)
+{
+	UCSR0B = (1<<RXEN0) | (1<<TXEN0);
+	UBRR0 = 7;
+	stdout = &mystdout;
+	stdin = &mystdin;
+}
+
+
+/*
+RIGHT MOTOR
+		IN1(PB1)		IN2(PB2)			RESULT
+			L		|		L		|		CW
+		----------------------------------------------
+			L		|		H		|		CCW
+		----------------------------------------------
+			H		|		L		|		Brake
+	
+
+*/
+void motorR_CW()
+{
+	PORTB &= ~((1<<PB1) | (1<<PB2));		//00000110 NOT => 11111001 AND WITH PORTB(00000100) = PORTB = 00000000			//CW
+}
+void motorR_CCW()
+{
+	PORTB &= ~((1<<PB1) | (1<<PB2));
+	PORTB |= (1<<PB2);
+}
+void motorR_BRAKE()
+{
+	PORTB &= ~((1<<PB1) | (1<<PB2));		//PB1 and 2 are cleared portb 00000000
+	PORTB |= (1<<PB1);						//00000100
+}
+
+void motorL_CW()
+{
+	PORTB &= ~((1<<PB3) | (1<<PB4));
+}
+void motorL_CCW()
+{
+	PORTB &= ~((1<<PB3) | (1<<PB4));
+	PORTB |= (1<<PB4);
+}
+void motorL_BRAKE()
+{
+	PORTB &= ~((1<<PB3) | (1<<PB4));		//PB1 and 2 are cleared portb 00000000
+	PORTB |= (1<<PB3);						//00000100
+}
+
+int main(void)
+{
+	init_uart();
+	printf(("System Booted, built %s on %s\n"), __TIME__, __DATE__);
+	
+	_delay_ms(500);		
+	DDRB |= ((1<<PB1) | (1<<PB2) | (1<<PB3) | (1<<PB4));			//set pins as output		  00000000 CW 
+	PORTB |= ((1<<PB1) | (1<<PB3));						//00000010						
+
+	//printf("PB 1 and PB2 right motor output\n");
+	//printf("PB 3 and PB4 left motor output\n");
+	
+	_delay_ms(2000);
+	
+	//PORTB |= (1<<PB2);		//ORed		PORTB = 00000100			//BRAKE
+	
+	printf("R Brake initializing... \n");
+	_delay_ms(2000);
+	printf("INITIALIZED \n");
+	
+	motorR_BRAKE();
+	
+	_delay_ms(2000);
+	printf("COMPLETED. delay 5 secs\n");
+	_delay_ms(5000);
+	
+	
+	printf("Right Motor CW initializing... \n");
+	_delay_ms(5000);
+	printf("INITIALIZED \n");
+	
+	motorR_CW();
+	
+	_delay_ms(2000);
+	printf("COMPLETED. delay 2 secs\n");
+	_delay_ms(2000);
+	
+	
+	printf("R Brake initializing... \n");
+	_delay_ms(2000);
+	printf("INITIALIZED \n");
+	
+	motorR_BRAKE();
+	
+	_delay_ms(2000);
+	printf("COMPLETED. delay 5 secs\n");
+	_delay_ms(5000);
+	
+	
+	printf("Right Motor CCW initializing... \n");
+	_delay_ms(5000);
+	printf("INITIALIZED \n");
+	
+	motorR_CCW();
+	
+	_delay_ms(2000);
+	printf("COMPLETED. delay 2 secs\n");
+	_delay_ms(2000);
+	
+	printf("R Brake initializing... \n");
+	_delay_ms(2000);
+	printf("INITIALIZED \n");
+	
+	motorR_BRAKE();
+	
+	_delay_ms(2000);
+	printf("COMPLETED. delay 5 secs\n");
+	_delay_ms(5000);
+	
+	
+	
+	printf("L Brake initializing... \n");
+	_delay_ms(2000);
+	printf("INITIALIZED \n");
+	
+	motorL_BRAKE();
+	
+	_delay_ms(2000);
+	printf("COMPLETED. delay 5 secs\n");
+	_delay_ms(5000);
+	
+	
+	printf("Left Motor CW initializing... \n");
+	_delay_ms(5000);
+	printf("INITIALIZED \n");
+	
+	motorL_CW();
+	
+	_delay_ms(2000);
+	printf("COMPLETED. delay 2 secs\n");
+	_delay_ms(2000);
+	
+	
+	printf("L Brake initializing... \n");
+	_delay_ms(2000);
+	printf("INITIALIZED \n");
+	
+	motorL_BRAKE();
+	
+	_delay_ms(2000);
+	printf("COMPLETED. delay 5 secs\n");
+	_delay_ms(5000);
+	
+	
+	printf("Left Motor CCW initializing... \n");
+	_delay_ms(5000);
+	printf("INITIALIZED \n");
+	
+	motorL_CCW();
+	
+	_delay_ms(2000);
+	printf("COMPLETED. delay 2 secs\n");
+	_delay_ms(2000);
+	
+	printf("L Brake initializing... \n");
+	_delay_ms(2000);
+	printf("INITIALIZED \n");
+	
+	motorL_BRAKE();
+	
+	_delay_ms(2000);
+	printf("COMPLETED. delay 5 secs\n");
+	_delay_ms(5000);
+
+}
+
 
