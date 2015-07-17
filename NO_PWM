@@ -28,20 +28,18 @@
 #include <stdlib.h>
 #include <util/delay.h>
 
-void motorR_BRAKE();
-void motorL_BRAKE();
-void motor_FWD();
-void motor_BWD();
+
+void motorR_BRAKE();				//GOOD
+void motorL_BRAKE();				//GOOD
+void motorL_CW();					//GOOD
+void motorR_CW();					//GOOD
+void motorL_CCW();					//GOOD
+void motorR_CCW();					//GOOD
+void motor_FWD();					//IFFY
+void motor_BWD();					//TESTING
 void motor_R_TURN();
 void motor_L_TURN();
-
-void motorL_CW();
-void motorR_CW();
-
-void motorL_CCW();
-void motorR_CCW();
-
-void _pwm_init();
+void motor_ALL_BRAKE();				//TESTING
 
 
 static int uart_putchar(char c, FILE *stream);
@@ -67,7 +65,7 @@ void init_uart(void)
 	stdin = &mystdin;
 }
 
-
+//MOTOR TRUTH TABLE
 /*
 RIGHT MOTOR
 		IN1(PB1)		IN2(PB2)			RESULT
@@ -76,9 +74,18 @@ RIGHT MOTOR
 			L		|		H		|		CCW
 		----------------------------------------------
 			H		|		L		|		Brake
-	
+			
+LEFT MOTOR
+		IN1(PB3)		IN2(PB4)			RESULT
+			L		|		L		|		CW
+		----------------------------------------------
+			L		|		H		|		CCW
+		----------------------------------------------
+			H		|		L		|		Brake
 
 */
+
+//RIGHT MOTOR FUNCTIONS
 void motorR_CW()
 {
 	PORTB &= ~((1<<PB1) | (1<<PB2));		//00000110 NOT => 11111001 AND WITH PORTB(00000100) = PORTB = 00000000			//CW
@@ -94,6 +101,7 @@ void motorR_BRAKE()
 	PORTB |= (1<<PB1);						//00000100
 }
 
+//LEFT MOTOR FUNCTIONS
 void motorL_CW()
 {
 	PORTB &= ~((1<<PB3) | (1<<PB4));
@@ -109,6 +117,112 @@ void motorL_BRAKE()
 	PORTB |= (1<<PB3);						//00000100
 }
 
+//FORWARD/BACKWARD FUNCTIONS
+void motor_FWD()
+{
+	//RIGHT MOTOR CW
+	printf("Right Motor CW initializing... \n");
+	_delay_ms(100);
+	printf("INITIALIZED \n");
+	
+	motorR_CW();
+	printf("COMPLETED. delay 2 secs\n");
+	_delay_ms(100);
+	
+	//LEFT MOTOR CW
+	printf("Left Motor CW initializing... \n");
+	_delay_ms(100);
+	printf("INITIALIZED \n");
+	
+	motorL_CW();
+	
+	printf("COMPLETED. delay 0.5 secs\n");
+	_delay_ms(100);
+	printf("delay 10 secs\n");
+	_delay_ms(10000);
+	
+	//R_BRAKE
+	printf("R Brake initializing... \n");
+	//_delay_ms(1000);
+	printf("INITIALIZED \n");
+	
+	motorR_BRAKE();
+	
+	//_delay_ms(1000);
+	printf("COMPLETED. delay 0.5 secs\n");
+	//_delay_ms(1000);		
+		
+	//L_BRAKE
+	printf("L Brake initializing... \n");
+	//_delay_ms(200);
+	printf("INITIALIZED \n");
+	_delay_ms(200);
+	motorL_BRAKE();
+	
+	
+	printf("COMPLETED. delay 0.1 secs\n");
+	//_delay_ms(200);	
+
+}
+void motor_BWD()
+{
+	//RIGHT MOTOR CCW
+	printf("Right Motor CCW initializing... \n");
+	_delay_ms(100);
+	printf("INITIALIZED \n");
+	
+	motorR_CCW();
+	
+	_delay_ms(100);
+	printf("COMPLETED. delay 2 secs\n");
+	_delay_ms(100);
+	
+	//LEFT MOTOR CCW
+	printf("Left Motor CCW initializing... \n");
+	_delay_ms(100);
+	printf("INITIALIZED \n");
+	
+	motorL_CCW();
+	
+	_delay_ms(100);
+	printf("COMPLETED. delay 2 secs\n");
+	_delay_ms(10000);
+	
+	//R_BRAKE
+	printf("R Brake initializing... \n");
+	//_delay_ms(1000);
+	printf("INITIALIZED \n");
+	
+	motorR_BRAKE();
+	
+	//_delay_ms(1000);
+	printf("COMPLETED. delay 0.5 secs\n");
+	//_delay_ms(1000);
+	
+	//L_BRAKE
+	printf("L Brake initializing... \n");
+	//_delay_ms(200);
+	printf("INITIALIZED \n");
+	_delay_ms(200);
+	motorL_BRAKE();
+	
+	
+	printf("COMPLETED. delay 0.1 secs\n");
+	//_delay_ms(200);
+	//PORTB &= ~((1<<PB1) | (1<<PB2) | (1<<PB3) | (1<<PB4));
+	//PORTB |= ((1<<PB2) | (1<<PB4));
+}
+
+//FULL STOP
+void motor_ALL_BRAKE()
+{
+	motorR_BRAKE();
+	motorL_BRAKE();
+	//PORTB &= ~((1<<PB1) | (1<<PB2) | (1<<PB3) | (1<<PB4));
+	//PORTB |= ((1<<PB1) | (1<<PB3));
+}
+
+
 int main(void)
 {
 	init_uart();
@@ -116,123 +230,191 @@ int main(void)
 	
 	_delay_ms(500);		
 	DDRB |= ((1<<PB1) | (1<<PB2) | (1<<PB3) | (1<<PB4));			//set pins as output		  00000000 CW 
-	PORTB |= ((1<<PB1) | (1<<PB3));						//00000010						
+	PORTB |= ((1<<PB1) | (1<<PB3));									//00001010						
 
 	//printf("PB 1 and PB2 right motor output\n");
 	//printf("PB 3 and PB4 left motor output\n");
 	
-	_delay_ms(2000);
-	
-	//PORTB |= (1<<PB2);		//ORed		PORTB = 00000100			//BRAKE
-	
-	printf("R Brake initializing... \n");
-	_delay_ms(2000);
-	printf("INITIALIZED \n");
-	
-	motorR_BRAKE();
-	
-	_delay_ms(2000);
-	printf("COMPLETED. delay 5 secs\n");
 	_delay_ms(5000);
 	
 	
-	printf("Right Motor CW initializing... \n");
-	_delay_ms(5000);
+	//TEST
+	//RIGHT MOTOR CW
+	/*printf("Right Motor CW initializing... \n");
+	_delay_ms(500);
 	printf("INITIALIZED \n");
 	
 	motorR_CW();
 	
-	_delay_ms(2000);
+	_delay_ms(500);
 	printf("COMPLETED. delay 2 secs\n");
-	_delay_ms(2000);
+	_delay_ms(500);
 	
-	
-	printf("R Brake initializing... \n");
-	_delay_ms(2000);
-	printf("INITIALIZED \n");
-	
-	motorR_BRAKE();
-	
-	_delay_ms(2000);
-	printf("COMPLETED. delay 5 secs\n");
-	_delay_ms(5000);
-	
-	
-	printf("Right Motor CCW initializing... \n");
-	_delay_ms(5000);
-	printf("INITIALIZED \n");
-	
-	motorR_CCW();
-	
-	_delay_ms(2000);
-	printf("COMPLETED. delay 2 secs\n");
-	_delay_ms(2000);
-	
-	printf("R Brake initializing... \n");
-	_delay_ms(2000);
-	printf("INITIALIZED \n");
-	
-	motorR_BRAKE();
-	
-	_delay_ms(2000);
-	printf("COMPLETED. delay 5 secs\n");
-	_delay_ms(5000);
-	
-	
-	
-	printf("L Brake initializing... \n");
-	_delay_ms(2000);
-	printf("INITIALIZED \n");
-	
-	motorL_BRAKE();
-	
-	_delay_ms(2000);
-	printf("COMPLETED. delay 5 secs\n");
-	_delay_ms(5000);
-	
-	
+	//LEFT MOTOR CW
 	printf("Left Motor CW initializing... \n");
 	_delay_ms(5000);
 	printf("INITIALIZED \n");
 	
 	motorL_CW();
 	
-	_delay_ms(2000);
+	_delay_ms(5000);
 	printf("COMPLETED. delay 2 secs\n");
-	_delay_ms(2000);
+	_delay_ms(5000);
 	
+	//R_BRAKE
+	printf("R Brake initializing... \n");
+	_delay_ms(500);
+	printf("INITIALIZED \n");
 	
+	motorR_BRAKE();
+	
+	_delay_ms(500);
+	printf("COMPLETED. delay 5 secs\n");
+	_delay_ms(500);
+	//L_BRAKE 
 	printf("L Brake initializing... \n");
-	_delay_ms(2000);
+	_delay_ms(500);
 	printf("INITIALIZED \n");
 	
 	motorL_BRAKE();
 	
-	_delay_ms(2000);
+	_delay_ms(500);
+	printf("COMPLETED. delay 5 secs\n");
+	_delay_ms(500);*/
+	
+	//MOTOR FORWARD
+	printf("FORWARD initializing... \n");
+	_delay_ms(5000);
+	printf("INITIALIZED \n");
+	
+	motor_FWD();
+	
+	_delay_ms(5000);
+	printf("FORWARD COMPLETED. delay 5 secs\n");
+	_delay_ms(5000);
+	
+	//MOTOR BACKWARD
+	/*printf("BACKWARD initializing... \n");
+	_delay_ms(5000);
+	printf("INITIALIZED \n");
+	
+	motor_BWD();
+	
+	_delay_ms(5000);
+	printf("BACKWARD COMPLETED. delay 5 secs\n");
+	_delay_ms(5000);*/
+	
+	//R TEST
+	//R_BRAKE
+	/*printf("R Brake initializing... \n");
+	_delay_ms(500);
+	printf("INITIALIZED \n");
+	
+	motorR_BRAKE();
+	
+	_delay_ms(500);
 	printf("COMPLETED. delay 5 secs\n");
 	_delay_ms(5000);
 	
+	//RIGHT MOTOR CW
+	printf("Right Motor CW initializing... \n");
+	_delay_ms(5000);
+	printf("INITIALIZED \n");
 	
+	motorR_CW();
+	
+	_delay_ms(5000);
+	printf("COMPLETED. delay 2 secs\n");
+	_delay_ms(5000);
+	
+	//R_BRAKE
+	printf("R Brake initializing... \n");
+	_delay_ms(5000);
+	printf("INITIALIZED \n");
+	
+	motorR_BRAKE();
+	
+	_delay_ms(5000);
+	printf("COMPLETED. delay 5 secs\n");
+	_delay_ms(5000);
+	
+	//RIGHT MOTOR CCW
+	printf("Right Motor CCW initializing... \n");
+	_delay_ms(5000);
+	printf("INITIALIZED \n");
+	
+	motorR_CCW();
+	
+	_delay_ms(5000);
+	printf("COMPLETED. delay 2 secs\n");
+	_delay_ms(5000);
+	
+	//R_BRAKE
+	printf("R Brake initializing... \n");
+	_delay_ms(5000);
+	printf("INITIALIZED \n");
+	
+	motorR_BRAKE();
+	
+	_delay_ms(5000);
+	printf("COMPLETED. delay 5 secs\n");
+	_delay_ms(5000);*/
+	
+	//L TEST
+	//L_BRAKE
+	/*printf("L Brake initializing... \n");
+	_delay_ms(5000);
+	printf("INITIALIZED \n");
+	
+	motorL_BRAKE();
+	
+	_delay_ms(5000);
+	printf("COMPLETED. delay 5 secs\n");
+	_delay_ms(5000);
+	
+	//LEFT MOTOR CW
+	printf("Left Motor CW initializing... \n");
+	_delay_ms(5000);
+	printf("INITIALIZED \n");
+	
+	motorL_CW();
+	
+	_delay_ms(5000);
+	printf("COMPLETED. delay 2 secs\n");
+	_delay_ms(5000);
+	
+	//L_BRAKE
+	printf("L Brake initializing... \n");
+	_delay_ms(5000);
+	printf("INITIALIZED \n");
+	
+	motorL_BRAKE();
+	
+	_delay_ms(5000);
+	printf("COMPLETED. delay 5 secs\n");
+	_delay_ms(5000);
+	
+	//LEFT MOTOR CCW
 	printf("Left Motor CCW initializing... \n");
 	_delay_ms(5000);
 	printf("INITIALIZED \n");
 	
 	motorL_CCW();
 	
-	_delay_ms(2000);
+	_delay_ms(5000);
 	printf("COMPLETED. delay 2 secs\n");
-	_delay_ms(2000);
+	_delay_ms(5000);
 	
+	//L_BRAKE
 	printf("L Brake initializing... \n");
-	_delay_ms(2000);
+	_delay_ms(5000);
 	printf("INITIALIZED \n");
 	
 	motorL_BRAKE();
 	
-	_delay_ms(2000);
-	printf("COMPLETED. delay 5 secs\n");
 	_delay_ms(5000);
+	printf("COMPLETED. delay 5 secs\n");
+	_delay_ms(5000);*/
 
 }
-
 
